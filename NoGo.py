@@ -2,7 +2,7 @@
 # /usr/bin/python3
 # Set the path to your python3 above
 
-from gtp_connection_go3 import GtpConnectionNoGo3
+from gtp_connection_go3 import GtpConnectionGo3
 from board_util import GoBoardUtil
 from board import GoBoard
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
@@ -89,31 +89,11 @@ class NoGo0:
             color = board.current_player
             if self.random_simulation:
                 move = GoBoardUtil.generate_random_move(board, color, True)
-            #else:
-            #    move = PatternUtil.generate_move_with_filter(
-            #        board, self.use_pattern, check_selfatari
-            #    )
-            board.play_move(move, color)
-
-            
-            #Instead of passing, we probably need to check if the game is over or not
-            #if move == PASS:
-            #    nuPasses += 1
-            #else:
-            #    nuPasses = 0
-            #if nuPasses >= 2:
-            #    break
-
-            legal_moves = GoBoardUtil.generate_legal_moves(board, color)
-
-            if(legal_moves<=0):
-                isWin=True
-                #break
-
-        if color == BLACK:
-              return WHITE
-        else:
-            return BLACK
+                if(move == None):
+                    return BLACK + WHITE - color
+                board.play_move(move, color)
+            else:
+                pass
        
     
 
@@ -122,7 +102,7 @@ def run(sim, move_select, sim_rule):
     start the gtp connection and wait for commands.
     """
     board = GoBoard(7)
-    con = GtpConnectionNoGo3(NoGo0(sim, move_select, sim_rule), board)
+    con = GtpConnectionGo3(NoGo0(sim, move_select, sim_rule), board)
     con.start_connection()
 
 

@@ -3,6 +3,7 @@ gtp_connection_go3.py
 Example for extending a GTP engine with extra commands
 """
 from gtp_connection import GtpConnection, point_to_coord, format_point
+from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
 from pattern_util import PatternUtil
 from board_util import GoBoardUtil
 
@@ -25,7 +26,7 @@ class GtpConnectionGo3(GtpConnection):
         self.commands["policy"] = self.policy_cmd
         self.commands["selection"] = self.selection_cmd
         self.commands["policy_moves"] = self.policy_moves_cmd
-
+        self.commands["genmove"] = self.genmove_cmd
         self.argmap["policy"] = (1, "Usage: policy {random, pattern}")
         self.argmap["selection"] = (1, "Usage: selection {rr, ucb}")
 
@@ -33,88 +34,54 @@ class GtpConnectionGo3(GtpConnection):
         pars = self.go_engine.get_pars()
         self.respond(pars)
 
-    def selfatari_cmd(self, args):
-        valid_values = [False, True]
-        value = bool(int(args[0]))
-        if value not in valid_values:
-            self.error("Argument ({}) must be True or False".format(value))
-        self.go_engine.check_selfatari = value
+    def selection_cmd(self, args):
+        if(args[0] != "rr" and args[0] != "ucb"):
+            self.respond("Usage: selection {rr, ucb}");
+            return;
+        self.go_engine.selection = args[0]
         self.respond()
-
-    def use_pattern_cmd(self, args):
-        valid_values = [False, True]
-        value = bool(int(args[0]))
-        if value not in valid_values:
-            self.error("Argument ({}) must be True or False".format(value))
-        self.go_engine.use_pattern = value
-        self.go_engine.random_simulation = not value
+    def policy_cmd(self, args):
+        if(args[0] != "random" and args[0] != "pattern"):
+            self.respond("Usage: policy {random, pattern}");
+            return;
+        self.go_engine.policy = args[0]
         self.respond()
-
-    def use_ucb_cmd(self, args):
-        valid_values = [False, True]
-        value = bool(int(args[0]))
-        if value not in valid_values:
-            self.error("Argument ({}) must be True or False".format(value))
-        self.go_engine.use_ucb = value
-        self.respond()
-
-    def random_simulation_cmd(self, args):
-        valid_values = [False, True]
-        value = bool(int(args[0]))
-        if value not in valid_values:
-            self.error("Argument ({}) must be True or False".format(value))
-        self.go_engine.random_simulation = value
-        self.go_engine.use_pattern = not value
-        self.respond()
-
-    def num_sim_cmd(self, args):
-        self.go_engine.sim = int(args[0])
-        self.respond()
-
+    
     def policy_moves_cmd(self, args):
         """
         Return list of policy moves for the current_player of the board
         """
-        policy_moves, type_of_move = PatternUtil.generate_all_policy_moves(
-            self.board, self.go_engine.use_pattern, self.go_engine.check_selfatari
-        )
-        if len(policy_moves) == 0:
-            self.respond("Pass")
+        cp = self.board.current_player
+        legalMoves = GoBoardUtil.generate_legal_moves(self.board, cp)
+        if self.go_engine.policy == 'random':
+            remainingMoves = len(legalMoves)
+            if remainingMoves == 0:
+                self.respond()
+            else:
+                pass #Calc and respond()
         else:
-            response = (
-                type_of_move + " " + sorted_point_string(policy_moves, self.board.size)
-            )
-            self.respond(response)
+            pass
+            #TODO
 
-    def random_moves_cmd(self, args):
-        """
-        Return list of random moves (legal, but not eye-filling)
-        """
-        moves = GoBoardUtil.generate_random_moves(self.board, True)
-        if len(moves) == 0:
-            self.respond("Pass")
+
+    def genmove_cmd(self, args):
+        color = WHITE if args[0] == 'w' else BLACK
+        bestMove = self.go_engine.getMoves(self.board, color)
+        if bestMove == None:
+            self.respond()
         else:
-            self.respond(sorted_point_string(moves, self.board.size))
+            self.respond(self.strPoint(bestMove).lower())
 
-    def legal_moves_for_toPlay_cmd(self, args):
-        try:
-            color = self.board.current_player
-            moves = GoBoardUtil.generate_legal_moves(self.board, color)
-            gtp_moves = []
-            for move in moves:
-                coords = point_to_coord(move, self.board.size)
-                gtp_moves.append(format_point(coords))
-            sorted_moves = " ".join(sorted(gtp_moves))
-            self.respond(sorted_moves)
-        except Exception as e:
-            self.respond("Error: {}".format(str(e)))
-
-    def gogui_analyze_cmd(self, args):
-        try:
-            self.respond(
-                "pstring/Legal Moves For ToPlay/legal_moves_for_toPlay\n"
-                "pstring/Policy Moves/policy_moves\n"
-                "pstring/Random Moves/random_moves\n"
-            )
-        except Exception as e:
-            self.respond("Error: {}".format(str(e)))
+    def genmove_cmd(self, args):
+        """ generate a move for color args[0] in {'b','w'} """
+        if(args[0] == 'w'):
+            color = WHITE
+        else:
+            color = BLACK
+        move = self.go_engine.get_move(self.board, color)
+        if move is None:
+            self.respond('unknown')
+            return
+        move_coord = point_to_coord(move, self.board.size)
+        move_as_string = format_point(move_coord)
+        self.respond(move_as_string)

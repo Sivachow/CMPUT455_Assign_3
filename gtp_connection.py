@@ -292,23 +292,6 @@ class GtpConnection:
         except Exception as e:
             self.respond("Error: {}".format(str(e)))
 
-    def genmove_cmd(self, args):
-        """ generate a move for color args[0] in {'b','w'} """
-        # change this method to use your solver
-        board_color = args[0].lower()
-        color = color_to_int(board_color)
-        move = self.go_engine.get_move(self.board, color)
-        if move is None:
-            self.respond('unknown')
-            return
-        move_coord = point_to_coord(move, self.board.size)
-        move_as_string = format_point(move_coord)
-        if self.board.is_legal(move, color):
-            self.board.play_move(move, color)
-            self.respond(move_as_string)
-        else:
-            self.respond("Illegal move: {}".format(move_as_string))
-
     def solve_cmd(self, args):
         # remove this respond and implement this method
         self.respond('Implement This for Assignment 2')
