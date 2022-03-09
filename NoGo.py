@@ -5,11 +5,13 @@
 from gtp_connection_go3 import GtpConnectionNoGo3
 from board_util import GoBoardUtil
 from board import GoBoard
-from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER
-
+from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
+from simulation_util import writeMoves, select_best_move
+import argparse
+import sys
 
 class NoGo0:
-    def __init__(self):
+    def __init__(self,sim, move_select, sim_rule, size=7, limit=100):
         """
         NoGo player that selects moves randomly from the set of legal moves.
 
@@ -22,58 +24,156 @@ class NoGo0:
         """
         self.name = "NoGo"
         self.version = 1.0
-        self.policy = "random" #or "pattern"
-        self.selection = "rr" #or "ucb"
+        self.sim = sim
+        self.limit = limit
+        self.use_ucb = False if move_select == "simple" else True
+        self.random_simulation = True if sim_rule == "random" else False
+        #self.use_pattern = not self.random_simulation
+
 
     def get_move(self, board, color):
-        return GoBoardUtil.generate_random_move(board, color, 
-                                                use_eye_filter=False)
+        """
+        Run one-ply MC simulations to get a move to play.
+        """
+        cboard = board.copy()
+        emptyPoints = board.get_empty_points()
+        moves = []
+        for p in emptyPoints:
+            if board.is_legal(p, color):
+                moves.append(p)
+        if not moves:
+            return None
+        moves.append(None)
 
-def getBestMove(self, gameState, color):
-    state = gameState.copy()
-    legal = self.generateLegalMoves(gameState, color)
-    probability = {}
-    if(len(legal) == 0):
-        return 
-    wins = 0
-    if(self.selection == "rr"):
-        for move in legal:
-            for i in range(10):
-                if(self.policy == "random"):
-                    winner = self.randomSimulate(gameState, move, color)
-                else:
-                    pass #TODO
-                if(winner == color ):
-                    wins+=1;
-            probability[move] = round(wins/(len(legal)*10),3)
-        return max(probability, key=probability.get)
+        if self.use_ucb:
+            C = 0.4  # sqrt(2) is safe, this is more aggressive
+            #best = runUcb(self, cboard, C, moves, color)
+            #return best
+            
+        else: #use round robin move selection policy
+            moveWins = []
+            for move in moves: #Simulate all the legal moves self.sim times
+                wins = self.simulateMove(cboard, move, color)
+                moveWins.append(wins)
 
-    #...UCB TODO
+            writeMoves(cboard, moves, moveWins, self.sim)
+            return select_best_move(board, moves, moveWins)
 
-def randomSimulate(self, gameState, move, color):
-    state = gameState.copy()
-    state.play_move(move, color)
-    while(True):
-        move = self.randomMove(state, state.current_player) #TODO
-        if move == None:
-            return BLACK + WHITE - state.current_player
-        state.play_move(move, state.current_player)
-def generateLegalMoves(self, gameState, color):
-    empty = gameState.get_empty_points()
-    moves = []
-    for pt in empty:
-        if gameState.is_legal(pt, color):
-            moves.append(pt)
-    return moves
+    def simulateMove(self, board, move, toplay):
+        """
+        Run simulations for a given move.
+        """
+        wins = 0
+        for _ in range(self.sim):
+            result = self.simulate(board, move, toplay)
+            if result == toplay:
+                wins += 1
+        return wins
 
-def run():
+    def simulate(self, board, move, toplay):
+        """
+        Run a simulated game for a given move.
+        """
+        cboard = board.copy()
+        cboard.play_move(move, toplay)
+        opp = GoBoardUtil.opponent(toplay)
+        return self.playGame(cboard, opp)
+
+    def playGame(self, board, color):
+        """
+        Run a simulation game.
+        """
+        nuPasses = 0
+        isWin = False
+        for _ in range(self.limit): #Don't think we need to use limit but to check if the game is over using a while loop
+            color = board.current_player
+            if self.random_simulation:
+                move = GoBoardUtil.generate_random_move(board, color, True)
+            #else:
+            #    move = PatternUtil.generate_move_with_filter(
+            #        board, self.use_pattern, check_selfatari
+            #    )
+            board.play_move(move, color)
+
+            
+            #Instead of passing, we probably need to check if the game is over or not
+            #if move == PASS:
+            #    nuPasses += 1
+            #else:
+            #    nuPasses = 0
+            #if nuPasses >= 2:
+            #    break
+
+            legal_moves = GoBoardUtil.generate_legal_moves(board, color)
+
+            if(legal_moves<=0):
+                isWin=True
+                #break
+
+        if color == BLACK:
+              return WHITE
+        else:
+            return BLACK
+       
+    
+
+def run(sim, move_select, sim_rule):
     """
     start the gtp connection and wait for commands.
     """
     board = GoBoard(7)
-    con = GtpConnectionNoGo3(NoGo0(), board)
+    con = GtpConnectionNoGo3(NoGo0(sim, move_select, sim_rule), board)
     con.start_connection()
 
 
+def parse_args():
+    """
+    Parse the arguments of the program.
+    """
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        "--sim",
+        type=int,
+        default=10,
+        help="number of simulations per move, so total playouts=sim*legal_moves",
+    )
+    parser.add_argument(
+        "--moveselect",
+        type=str,
+        default="simple",
+        help="type of move selection: simple or ucb",
+    )
+    parser.add_argument(
+        "--simrule",
+        type=str,
+        default="random",
+        help="type of simulation policy: random or rulebased",
+    )
+    #parser.add_argument(
+    #    "--movefilter",
+    #    action="store_true",
+    #    default=False,
+    #    help="whether use move filter or not",
+    #)
+
+    args = parser.parse_args()
+    sim = args.sim
+    move_select = args.moveselect
+    sim_rule = args.simrule
+    #move_filter = args.movefilter
+
+    if move_select != "simple" and move_select != "ucb":
+        print("moveselect must be simple or ucb")
+        sys.exit(0)
+    if sim_rule != "random" and sim_rule != "rulebased":
+        print("simrule must be random or rulebased")
+        sys.exit(0)
+
+    return sim, move_select, sim_rule
+
+
 if __name__ == "__main__":
-    run()
+    sim, move_select, sim_rule = parse_args()
+    run(sim, move_select, sim_rule)
