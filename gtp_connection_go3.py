@@ -22,21 +22,12 @@ class GtpConnectionGo3(GtpConnection):
         """
         GtpConnection.__init__(self, go_engine, board, debug_mode)
 
-        self.commands["selfatari"] = self.selfatari_cmd
-        self.commands["use_pattern"] = self.use_pattern_cmd
-        self.commands["random_simulation"] = self.random_simulation_cmd
-        self.commands["use_ucb"] = self.use_ucb_cmd
-        self.commands["num_sim"] = self.num_sim_cmd
-        self.commands["legal_moves_for_toPlay"] = self.legal_moves_for_toPlay_cmd
+        self.commands["policy"] = self.policy_cmd
+        self.commands["selection"] = self.selection_cmd
         self.commands["policy_moves"] = self.policy_moves_cmd
-        self.commands["random_moves"] = self.random_moves_cmd
-        self.commands["gogui-analyze_commands"] = self.gogui_analyze_cmd
 
-        self.argmap["selfatari"] = (1, "Usage: selfatari BOOL")
-        self.argmap["use_pattern"] = (1, "Usage: use_pattern BOOL")
-        self.argmap["random_simulation"] = (1, "Usage: random_simulation BOOL")
-        self.argmap["use_ucb"] = (1, "Usage: use_ucb BOOL")
-        self.argmap["num_sim"] = (1, "Usage: num_sim #(e.g. num_sim 100 )")
+        self.argmap["policy"] = (1, "Usage: policy {random, pattern}")
+        self.argmap["selection"] = (1, "Usage: selection {rr, ucb}")
 
     def get_parameter_cmd(self, args):
         pars = self.go_engine.get_pars()
