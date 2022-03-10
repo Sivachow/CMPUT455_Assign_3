@@ -292,6 +292,7 @@ class GtpConnection:
         except Exception as e:
             self.respond("Error: {}".format(str(e)))
 
+
     def solve_cmd(self, args):
         # remove this respond and implement this method
         self.respond('Implement This for Assignment 2')

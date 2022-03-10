@@ -7,11 +7,12 @@ from board_util import GoBoardUtil
 from board import GoBoard
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
 from simulation_util import writeMoves, select_best_move
+from ucb import runUcb
 import argparse
 import sys
 
 class NoGo0:
-    def __init__(self,sim, move_select, sim_rule, size=7, limit=100):
+    def __init__(self, move_select, sim_rule, size=7, limit=100):
         """
         NoGo player that selects moves randomly from the set of legal moves.
 
@@ -24,10 +25,10 @@ class NoGo0:
         """
         self.name = "NoGo"
         self.version = 1.0
-        self.sim = sim
+        self.sim = 10
         self.limit = limit
-        self.use_ucb = False if move_select == "simple" else True
-        self.random_simulation = True if sim_rule == "random" else False
+        self.policy = "random" # random or pattern
+        self.selection = "rr" # rr or ucb
         #self.use_pattern = not self.random_simulation
 
 
@@ -45,18 +46,16 @@ class NoGo0:
             return None
         moves.append(None)
 
-        if self.use_ucb:
+        if self.selection == "ucb":
             C = 0.4  # sqrt(2) is safe, this is more aggressive
-            #best = runUcb(self, cboard, C, moves, color)
-            #return best
+            best = runUcb(self, cboard, C, moves, color)
+            return best
             
         else: #use round robin move selection policy
             moveWins = []
             for move in moves: #Simulate all the legal moves self.sim times
                 wins = self.simulateMove(cboard, move, color)
-                moveWins.append(wins)
-
-            writeMoves(cboard, moves, moveWins, self.sim)
+                moveWins.append(round(wins/(len(moves)*self.sim),3))
             return select_best_move(board, moves, moveWins)
 
     def simulateMove(self, board, move, toplay):
@@ -83,17 +82,16 @@ class NoGo0:
         """
         Run a simulation game.
         """
-        nuPasses = 0
-        isWin = False
-        for _ in range(self.limit): #Don't think we need to use limit but to check if the game is over using a while loop
-            color = board.current_player
-            if self.random_simulation:
+        if self.policy == "random":
+            while(True): 
+                color = board.current_player
                 move = GoBoardUtil.generate_random_move(board, color, True)
                 if(move == None):
                     return BLACK + WHITE - color
                 board.play_move(move, color)
-            else:
-                pass
+        else:
+            pass
+        
        
     
 

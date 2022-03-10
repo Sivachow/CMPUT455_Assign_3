@@ -83,5 +83,4 @@ def runUcb(player, board, C, moves, toplay):
         stats[moveIndex][1] += 1
     bestIndex = bestArm(stats)
     best = moves[bestIndex]
-    writeMoves(board, moves, stats)
     return best
