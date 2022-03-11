@@ -33,16 +33,13 @@ def get_pattern_probs(board, moves, color):
 
         pattern = get_pattern(board, move, color)
         address = base4_to_base10(pattern)
-        point = format_point(point_to_coord(move, board.size)).lower()
-        pattern_moves[point] = weights[address]
+        #point = format_point(point_to_coord(move, board.size)).lower()
+        pattern_moves[move] = weights[address]
         weight_sum += weights[address]
 
         #undo move
         board.board[move] = 0
         board.current_player = color
-    
-    for x in pattern_moves.keys():
-        pattern_moves[x] = round(pattern_moves[x]/weight_sum, 3)
 
     return pattern_moves, weight_sum
 

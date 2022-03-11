@@ -79,9 +79,23 @@ class GtpConnectionGo3(GtpConnection):
             else:
                 self.respond(self.respondProb(moves))
         elif self.go_engine.policy == 'pattern':
-            pattern_moves = get_pattern_probs(self.board, moves, color)[0]
-            result = sorted(list(pattern_moves.keys()))
-            result = ' '.join(result) + ' ' + ' '.join([str(pattern_moves[x]) for x in result])
+            pattern_moves, weight_sum = get_pattern_probs(self.board, moves, color) #Returns a dictionary of move:weight items. Move is an integer
+
+            moves = list(pattern_moves.keys())
+            points = []
+            for move in moves:
+                point = format_point(point_to_coord(move, self.board.size)).lower()
+                points.append(point)
+
+            weights = list(pattern_moves.values())
+            probs = []
+
+            for x in weights:
+                probs.append(round(x/weight_sum, 3)) #Converting weights to probabilities
+
+            new_dic = dict(zip(points, probs))
+            result = sorted(list(new_dic.keys()))
+            result = ' '.join(result) + ' ' + ' '.join([str(new_dic[x]) for x in result])
             self.respond(result)
 
     def genmove_cmd(self, args):

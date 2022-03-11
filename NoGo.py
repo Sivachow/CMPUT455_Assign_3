@@ -2,6 +2,7 @@
 # /usr/bin/python3
 # Set the path to your python3 above
 
+import random
 from gtp_connection_go3 import GtpConnectionGo3
 from board_util import GoBoardUtil
 from board import GoBoard
@@ -10,6 +11,8 @@ from simulation_util import writeMoves, select_best_move
 from ucb import runUcb
 import argparse
 import sys
+from pattern import *
+
 
 class NoGo0:
     def __init__(self, move_select, sim_rule, size=7, limit=100):
@@ -40,7 +43,7 @@ class NoGo0:
         emptyPoints = board.get_empty_points()
         moves = []
         for p in emptyPoints:
-            if board.is_legal(p, color):
+            if board.is_legal(p, color): #Can make this faster by just getting legal moves? GoBoardUtil.generate_legal_moves(self.board, color)
                 moves.append(p)
         if not moves:
             return None
@@ -56,6 +59,7 @@ class NoGo0:
             for move in moves: #Simulate all the legal moves self.sim times
                 wins = self.simulateMove(cboard, move, color)
                 moveWins.append(round(wins/(len(moves)*self.sim),3))
+
             return select_best_move(board, moves, moveWins)
 
     def simulateMove(self, board, move, toplay):
@@ -90,7 +94,20 @@ class NoGo0:
                     return BLACK + WHITE - color
                 board.play_move(move, color)
         elif self.policy == "pattern":
-            pass
+             while(True): 
+                color = board.current_player
+                legal_moves = GoBoardUtil.generate_legal_moves(board, color)
+                if not legal_moves:
+                    return BLACK + WHITE - color
+                
+                pattern_moves = get_pattern_probs(board, legal_moves, color)[0] #Get a dictionary of all the legal moves with their weights
+                moves = list(pattern_moves.keys())
+                weights = list(pattern_moves.values())
+                
+                move = random.choices(moves, weights = weights, k=1)[0] #Generate a random move from moves based on weights
+                #print(move)
+                board.play_move(move, color)
+            
        
     
 
