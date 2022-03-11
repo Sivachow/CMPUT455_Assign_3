@@ -19,7 +19,7 @@ def sorted_point_string(points, boardsize):
     return " ".join(sorted(result))
 
 
-class GtpConnectionGo3(GtpConnection):
+class GtpConnectionNoGo(GtpConnection):
     def __init__(self, go_engine, board, debug_mode=False):
         """
         GTP connection of Go3
@@ -79,7 +79,8 @@ class GtpConnectionGo3(GtpConnection):
             else:
                 self.respond(self.respondProb(moves))
         elif self.go_engine.policy == 'pattern':
-            pattern_moves, weight_sum = get_pattern_probs(self.board, moves, color) #Returns a dictionary of move:weight items. Move is an integer
+            weights = load_weights()
+            pattern_moves, weight_sum = get_pattern_probs(self.board, moves, color,weights) #Returns a dictionary of move:weight items. Move is an integer
 
             moves = list(pattern_moves.keys())
             points = []

@@ -3,7 +3,7 @@
 # Set the path to your python3 above
 
 import random
-from gtp_connection_go3 import GtpConnectionGo3
+from gtp_connection_nogo import GtpConnectionNoGo
 from board_util import GoBoardUtil
 from board import GoBoard
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
@@ -32,6 +32,7 @@ class NoGo0:
         self.limit = limit
         self.policy = "random" # random or pattern
         self.selection = "rr" # rr or ucb
+        self.weights = load_weights()
         #self.use_pattern = not self.random_simulation
 
 
@@ -100,7 +101,7 @@ class NoGo0:
                 if not legal_moves:
                     return BLACK + WHITE - color
                 
-                pattern_moves = get_pattern_probs(board, legal_moves, color)[0] #Get a dictionary of all the legal moves with their weights
+                pattern_moves = get_pattern_probs(board, legal_moves, color,self.weights)[0] #Get a dictionary of all the legal moves with their weights
                 moves = list(pattern_moves.keys())
                 weights = list(pattern_moves.values())
                 
@@ -116,7 +117,7 @@ def run(sim, move_select, sim_rule):
     start the gtp connection and wait for commands.
     """
     board = GoBoard(7)
-    con = GtpConnectionGo3(NoGo0(sim, move_select, sim_rule), board)
+    con = GtpConnectionNoGo(NoGo0(sim, move_select, sim_rule), board)
     con.start_connection()
 
 

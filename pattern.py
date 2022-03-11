@@ -23,8 +23,8 @@ def get_pattern(board, point, color):
         pattern += str(board.board[nb])
     return pattern
 
-def get_pattern_probs(board, moves, color):
-    weights = load_weights()
+def get_pattern_probs(board, moves, color, weights):
+    
     pattern_moves = {}
     weight_sum = 0
     for move in moves:
@@ -32,7 +32,7 @@ def get_pattern_probs(board, moves, color):
         board.play_move(move, color)
 
         pattern = get_pattern(board, move, color)
-        address = base4_to_base10(pattern)
+        address = int(pattern,4)
         #point = format_point(point_to_coord(move, board.size)).lower()
         pattern_moves[move] = weights[address]
         weight_sum += weights[address]
