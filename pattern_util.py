@@ -43,6 +43,7 @@ class PatternUtil(object):
                 pattern += " "
         return pattern
 
+    @staticmethod
     def last_moves_empty_neighbors(board):
         """
         Get the neighbors of last_move and second last move.
@@ -54,9 +55,9 @@ class PatternUtil(object):
         """
         nb_list = []
         for c in board.last_board_moves():
-            nb_of_c_list = list(self._neighbors(c) + self._diag_neighbors(c))
+            nb_of_c_list = list(board._neighbors(c) + board._diag_neighbors(c))
             nb_list += [
-                d for d in nb_of_c_list if self.board[d] == EMPTY and d not in nb_list
+                d for d in nb_of_c_list if board.board[d] == EMPTY and d not in nb_list
             ]
         return nb_list
 
@@ -67,7 +68,7 @@ class PatternUtil(object):
         This only checks moves that are neighbors of the moves in the last two steps.
         See last_moves_empty_neighbors() in board for detail.
         """
-        pattern_checking_set = last_moves_empty_neighbors(board)
+        pattern_checking_set = PatternUtil.last_moves_empty_neighbors(board)
         moves = []
         for p in pattern_checking_set:
             if PatternUtil.neighborhood_33(board, p) in pat3set:

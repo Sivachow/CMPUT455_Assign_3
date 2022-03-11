@@ -7,6 +7,7 @@ from board_util import GoBoardUtil
 from board import GoBoard
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
 from simulation_util import writeMoves, select_best_move
+from pattern_util import PatternUtil
 from ucb import runUcb
 import argparse
 import sys
@@ -89,9 +90,10 @@ class NoGo0:
                 if(move == None):
                     return BLACK + WHITE - color
                 board.play_move(move, color)
-        else:
+        elif self.policy == "pattern":
+        #    moves = PatternUtil.generate_pattern_moves(board)
+        #    print(moves)
             pass
-        
        
     
 
