@@ -7,7 +7,7 @@ from turtle import color
 from numpy import moveaxis
 from gtp_connection import GtpConnection, point_to_coord, format_point
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
-from pattern_util import PatternUtil
+from pattern import *
 from board_util import GoBoardUtil
 
 
@@ -32,7 +32,6 @@ class GtpConnectionGo3(GtpConnection):
         self.commands["genmove"] = self.genmove_cmd
         self.argmap["policy"] = (1, "Usage: policy {random, pattern}")
         self.argmap["selection"] = (1, "Usage: selection {rr, ucb}")
-        self.weights = self.load_weights()
 
     def get_parameter_cmd(self, args):
         pars = self.go_engine.get_pars()
@@ -68,29 +67,6 @@ class GtpConnectionGo3(GtpConnection):
 
         return str_build[1:]
 
-    def load_weights(self):
-        weights = {}
-        with open('weights.txt') as f:
-            lines = f.readlines()
-            for line in lines:
-                weights[int(line.split()[0])] = float(line.split()[1])
-        return weights
-
-    def base4_to_base10(self, num, base=4):
-        base10 = 0
-        for i, digit in enumerate(num):
-            base10 += int(digit)*base**i
-        return base10
-
-    def get_pattern(self, board, point, color):
-        neighbors = sorted(board._neighbors(point)+board._diag_neighbors(point))
-        pattern = ''
-        for nb in neighbors:
-            # print(nb, format_point(point_to_coord(nb, self.board.size)), board.board[nb])
-            pattern += str(board.board[nb])
-        return pattern
-
-
     def policy_moves_cmd(self, args):
         """
         Return list of policy moves for the current_player of the board
@@ -103,24 +79,9 @@ class GtpConnectionGo3(GtpConnection):
             else:
                 self.respond(self.respondProb(moves))
         elif self.go_engine.policy == 'pattern':
-            pattern_moves = {}
-            weight_sum = 0
-            for move in moves:
-                # print(format_point(point_to_coord(move, self.board.size)))
-                #play move
-                self.board.play_move(move, color)
-
-                pattern = self.get_pattern(self.board, move, color)
-                address = self.base4_to_base10(pattern)
-                point = format_point(point_to_coord(move, self.board.size)).lower()
-                pattern_moves[point] = self.weights[address]
-                weight_sum += self.weights[address]
-
-                #undo move
-                self.board.board[move] = 0
-                self.board.current_player = color
+            pattern_moves = get_pattern_probs(self.board, moves, color)[0]
             result = sorted(list(pattern_moves.keys()))
-            result = ' '.join(result) + ' ' + ' '.join([str(round(pattern_moves[x]/weight_sum, 3)) for x in result])
+            result = ' '.join(result) + ' ' + ' '.join([str(pattern_moves[x]) for x in result])
             self.respond(result)
 
     def genmove_cmd(self, args):
