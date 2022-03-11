@@ -2,7 +2,8 @@
 # /usr/bin/python3
 # Set the path to your python3 above
 
-from gtp_connection_go3 import GtpConnectionGo3
+import random
+from gtp_connection_nogo import GtpConnectionNoGo
 from board_util import GoBoardUtil
 from board import GoBoard
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
@@ -10,6 +11,8 @@ from simulation_util import writeMoves, select_best_move
 from ucb import runUcb
 import argparse
 import sys
+from pattern import *
+
 
 class NoGo0:
     def __init__(self, move_select, sim_rule, size=7, limit=100):
@@ -29,6 +32,7 @@ class NoGo0:
         self.limit = limit
         self.policy = "random" # random or pattern
         self.selection = "rr" # rr or ucb
+        self.weights = load_weights()
         #self.use_pattern = not self.random_simulation
 
 
@@ -40,7 +44,7 @@ class NoGo0:
         emptyPoints = board.get_empty_points()
         moves = []
         for p in emptyPoints:
-            if board.is_legal(p, color):
+            if board.is_legal(p, color): #Can make this faster by just getting legal moves? GoBoardUtil.generate_legal_moves(self.board, color)
                 moves.append(p)
         if not moves:
             return None
@@ -56,6 +60,7 @@ class NoGo0:
             for move in moves: #Simulate all the legal moves self.sim times
                 wins = self.simulateMove(cboard, move, color)
                 moveWins.append(round(wins/(len(moves)*self.sim),3))
+
             return select_best_move(board, moves, moveWins)
 
     def simulateMove(self, board, move, toplay):
@@ -89,9 +94,21 @@ class NoGo0:
                 if(move == None):
                     return BLACK + WHITE - color
                 board.play_move(move, color)
-        else:
-            pass
-        
+        elif self.policy == "pattern":
+             while(True): 
+                color = board.current_player
+                legal_moves = GoBoardUtil.generate_legal_moves(board, color)
+                if not legal_moves:
+                    return BLACK + WHITE - color
+                
+                pattern_moves = get_pattern_probs(board, legal_moves, color,self.weights)[0] #Get a dictionary of all the legal moves with their weights
+                moves = list(pattern_moves.keys())
+                weights = list(pattern_moves.values())
+                
+                move = random.choices(moves, weights = weights, k=1)[0] #Generate a random move from moves based on weights
+                #print(move)
+                board.play_move(move, color)
+            
        
     
 
@@ -100,7 +117,7 @@ def run(sim, move_select, sim_rule):
     start the gtp connection and wait for commands.
     """
     board = GoBoard(7)
-    con = GtpConnectionGo3(NoGo0(sim, move_select, sim_rule), board)
+    con = GtpConnectionNoGo(NoGo0(sim, move_select, sim_rule), board)
     con.start_connection()
 
 

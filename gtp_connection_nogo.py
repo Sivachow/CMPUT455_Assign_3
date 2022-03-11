@@ -7,7 +7,7 @@ from turtle import color
 from numpy import moveaxis
 from gtp_connection import GtpConnection, point_to_coord, format_point
 from board_util import GoBoardUtil, BLACK, WHITE, EMPTY, BORDER, PASS
-from pattern_util import PatternUtil
+from pattern import *
 from board_util import GoBoardUtil
 
 
@@ -19,7 +19,7 @@ def sorted_point_string(points, boardsize):
     return " ".join(sorted(result))
 
 
-class GtpConnectionGo3(GtpConnection):
+class GtpConnectionNoGo(GtpConnection):
     def __init__(self, go_engine, board, debug_mode=False):
         """
         GTP connection of Go3
@@ -39,14 +39,14 @@ class GtpConnectionGo3(GtpConnection):
 
     def selection_cmd(self, args):
         if(args[0] != "rr" and args[0] != "ucb"):
-            self.respond("Usage: selection {rr, ucb}");
-            return;
+            self.respond("Usage: selection {rr, ucb}")
+            return
         self.go_engine.selection = args[0]
         self.respond()
     def policy_cmd(self, args):
         if(args[0] != "random" and args[0] != "pattern"):
-            self.respond("Usage: policy {random, pattern}");
-            return;
+            self.respond("Usage: policy {random, pattern}")
+            return
         self.go_engine.policy = args[0]
         self.respond()
     
@@ -58,14 +58,15 @@ class GtpConnectionGo3(GtpConnection):
             move_coord = point_to_coord(move, self.board.size)
             move_as_string = format_point(move_coord)
             lst.append(move_as_string.lower())
-        lst.sort();
+        lst.sort()
         for move in lst:
             str_build = str_build + " " + move
 
         for move in moves:
             str_build = str_build + " " + str(num)
 
-        return "[" + str_build[1:]+"]"
+        return str_build[1:]
+
     def policy_moves_cmd(self, args):
         """
         Return list of policy moves for the current_player of the board
@@ -77,9 +78,26 @@ class GtpConnectionGo3(GtpConnection):
                 self.respond()
             else:
                 self.respond(self.respondProb(moves))
-        else:
-            pass
-            #TODO
+        elif self.go_engine.policy == 'pattern':
+            weights = load_weights()
+            pattern_moves, weight_sum = get_pattern_probs(self.board, moves, color,weights) #Returns a dictionary of move:weight items. Move is an integer
+
+            moves = list(pattern_moves.keys())
+            points = []
+            for move in moves:
+                point = format_point(point_to_coord(move, self.board.size)).lower()
+                points.append(point)
+
+            weights = list(pattern_moves.values())
+            probs = []
+
+            for x in weights:
+                probs.append(round(x/weight_sum, 3)) #Converting weights to probabilities
+
+            new_dic = dict(zip(points, probs))
+            result = sorted(list(new_dic.keys()))
+            result = ' '.join(result) + ' ' + ' '.join([str(new_dic[x]) for x in result])
+            self.respond(result)
 
     def genmove_cmd(self, args):
         """ generate a move for color args[0] in {'b','w'} """
