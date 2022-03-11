@@ -66,7 +66,7 @@ class GtpConnectionGo3(GtpConnection):
         for move in moves:
             str_build = str_build + " " + str(num)
 
-        return "[" + str_build[1:]+"]"
+        return str_build[1:]
 
     def load_weights(self):
         weights = {}
@@ -120,7 +120,7 @@ class GtpConnectionGo3(GtpConnection):
                 self.board.board[move] = 0
                 self.board.current_player = color
             result = sorted(list(pattern_moves.keys()))
-            result = '[' + ' '.join(result) + ' ' + ' '.join([str(round(pattern_moves[x]/weight_sum, 3)) for x in result]) + ']'
+            result = ' '.join(result) + ' ' + ' '.join([str(round(pattern_moves[x]/weight_sum, 3)) for x in result])
             self.respond(result)
 
     def genmove_cmd(self, args):
