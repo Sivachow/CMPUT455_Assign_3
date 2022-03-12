@@ -1,0 +1,6 @@
+Script started on 2022-03-11 17:32:54-07:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="228" LINES="17"]
+amahesh@ug10:~/cmput455/CMPUT455_Assign_3>gogui-regress "python3 NoGo.py" assignment3-public-tests.gtp
+amahesh@ug10:~/cmput455/CMPUT455_Assign_3>exit
+exit
+
+Script done on 2022-03-11 17:33:41-07:00 [COMMAND_EXIT_CODE="0"]

@@ -106,7 +106,6 @@ class NoGo0:
                 weights = list(pattern_moves.values())
                 
                 move = random.choices(moves, weights = weights, k=1)[0] #Generate a random move from moves based on weights
-                #print(move)
                 board.play_move(move, color)
             
        
