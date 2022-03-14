@@ -44,11 +44,10 @@ class NoGo0:
         emptyPoints = board.get_empty_points()
         moves = []
         for p in emptyPoints:
-            if board.is_legal(p, color): #Can make this faster by just getting legal moves? GoBoardUtil.generate_legal_moves(self.board, color)
+            if board.is_legal(p, color):
                 moves.append(p)
         if not moves:
             return None
-        moves.append(None)
 
         if self.selection == "ucb":
             C = 0.4  # sqrt(2) is safe, this is more aggressive
