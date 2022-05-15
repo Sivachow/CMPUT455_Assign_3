@@ -3,7 +3,7 @@ board_util.py
 Utility functions for Go board.
 """
 
-import numpy as np
+import numpy as np 
 import random
 
 """
